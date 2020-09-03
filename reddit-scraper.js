@@ -24,5 +24,5 @@ puppeteer
       }
     });
     console.log(newsHeadlines);
-  });
+  })
   .catch(console.error);
