@@ -1,7 +1,7 @@
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 
-const url = 'https://www.reddit.com/r/news/';
+const url = 'https://www.reddit.com/r/Philippines/';
 
 puppeteer
   .launch()
@@ -14,12 +14,15 @@ puppeteer
   .then(html => {
     const $ = cheerio.load(html);
     const newsHeadlines = [];
-    $('a[href*="/r/news/comments"] > h2').each(function() {
-      newsHeadlines.push({
-        title: $(this).text(),
-      });
+    $('.scrollerItem').each(function() {
+      if ($(this).find('a[href*="/r/Philippines/comments"] h3').text() !== '') {
+        newsHeadlines.push({
+          title: $(this).find('a[href*="/r/Philippines/comments"] h3').text(),
+          votes: $(this).find('div[id*="vote-arrows-"] > div').html(),
+          url: $(this).find('a[href*="/r/Philippines/comments"]').attr('href'),
+        });
+      }
     });
-
     console.log(newsHeadlines);
-  })
+  });
   .catch(console.error);
