@@ -1,28 +1,37 @@
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
+const colors = require('colors');
 
-const url = 'https://www.reddit.com/r/Philippines/';
+const url = 'https://www.reddit.com/r/Philippines';
 
-puppeteer
-  .launch()
-  .then(browser => browser.newPage())
-  .then(page => {
-    return page.goto(url).then(function() {
-      return page.content();
+console.log(`Scraping: ${url}`.yellow);
+
+(async () => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(url, {waitUntil: 'networkidle0'})
+    .catch(err => {
+      console.log(`ERROR: ${err}`.bgRed);
+      return console.error;
     });
-  })
-  .then(html => {
-    const $ = cheerio.load(html);
-    const newsHeadlines = [];
-    $('.scrollerItem').each(function() {
-      if ($(this).find('a[href*="/r/Philippines/comments"] h3').text() !== '') {
-        newsHeadlines.push({
-          title: $(this).find('a[href*="/r/Philippines/comments"] h3').text(),
-          votes: $(this).find('div[id*="vote-arrows-"] > div').html(),
-          url: $(this).find('a[href*="/r/Philippines/comments"]').attr('href'),
-        });
-      }
-    });
-    console.log(newsHeadlines);
-  })
-  .catch(console.error);
+  const html = await page.content();
+
+  const posts = [];
+  const $ = cheerio.load(html);
+  $('.scrollerItem').each(function() {
+    const title = $(this).find('a[href*="/r/Philippines/comments"] h3').text();
+    const votes = !isNaN(parseInt($(this).find('div[id*="vote-arrows-"] > button + div').html())) ? parseInt($(this).find('div[id*="vote-arrows-"] > button + div').html()) : 0;
+    const url = $(this).find('a[href*="/r/Philippines/comments"]').attr('href');
+    if (title !== '') {
+      posts.push({
+        title: title,
+        votes: votes,
+        url: url,
+      });
+    }
+  });
+
+  console.log(posts);
+ 
+  await browser.close();
+})();
